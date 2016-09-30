@@ -50,7 +50,12 @@ struct
     val epoll_ctl_ffi  = buildCall4 ((getSymbol libc "epoll_ctl"),   (cInt, cInt, cInt, cConstStar epoll_event_conversion), cInt)
     val epoll_wait_ffi = buildCall4 ((getSymbol libc "epoll_wait"),  (cInt,  cArrayPointer epoll_event_conversion, cInt, cInt), cInt)
 
-    fun epoll_ctl ev ctl fd event = if epoll_ctl_ffi(ev, ctl, fd, (event, fd)) = 0 then 1 else raise Ev "evModify"
+    val EPOLL_CTL_ADD = 1 and EPOLL_CTL_DEL = 2 and EPOLL_CTL_MOD = 3
+
+    fun epoll_ctl ev ctl fd event =
+      if epoll_ctl_ffi(ev, ctl, fd, (event, fd)) = 0
+      then 1
+      else if ctl = EPOLL_CTL_DEL then 0 else raise Ev "evModify"
 
     val epoll_event_array = Array.array (max_events, (0,0))
 
@@ -73,7 +78,6 @@ struct
         infix xorb
         fun op xorb(a:int,b:int):int = Word.toInt(Word.xorb(Word.fromInt a, Word.fromInt b))
 
-        val EPOLL_CTL_ADD = 1 and EPOLL_CTL_DEL = 2 and EPOLL_CTL_MOD = 3
         val EPOLLIN = 1 and EPOLLOUT = 4
 
         fun evModifyOne (evAdd (fd, evRead, cb))  = if isSome (H.sub (rH, fd)) then 0 else ( (

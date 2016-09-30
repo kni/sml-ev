@@ -52,6 +52,7 @@ struct
     fun getC_Int32(p):(t*int)  = let val v = Int32.toInt(getInt32(p, 0))   val p = add (p, 0wx4) in (p,v) end
     fun getC_Word32(p):(t*int) = let val v = Word32.toInt(getWord32(p, 0)) val p = add (p, 0wx4) in (p,v) end
 
+    val EPOLL_CTL_ADD = 1 and EPOLL_CTL_DEL = 2 and EPOLL_CTL_MOD = 3
 
     fun epoll_ctl ev ctl fd event =
       let
@@ -59,7 +60,9 @@ struct
         val p = setC_Word32(p, event)
         val p = setC_Int32(p, fd) val p = add (p, 0wx4) (* for union *)
       in
-        if epoll_ctl_ffi(ev, ctl, fd, epoll_event_pointer) = 0 then 1 else raise Ev "evModify"
+        if epoll_ctl_ffi(ev, ctl, fd, epoll_event_pointer) = 0
+        then 1
+        else if ctl = EPOLL_CTL_DEL then 0 else raise Ev "evModify"
       end
 
 
@@ -106,7 +109,6 @@ struct
         infix xorb
         fun op xorb(a:int,b:int):int = Word.toInt(Word.xorb(Word.fromInt a, Word.fromInt b))
 
-        val EPOLL_CTL_ADD = 1 and EPOLL_CTL_DEL = 2 and EPOLL_CTL_MOD = 3
         val EPOLLIN = 1 and EPOLLOUT = 4
 
         fun evModifyOne (evAdd (fd, evRead, cb))  = if isSome (H.sub (rH, fd)) then 0 else ( (
