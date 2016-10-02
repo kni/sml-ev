@@ -32,7 +32,7 @@ end
 val _ = print "-----\n"
 
 local open Ev in
-  val ev = evIni ()
+  val ev = evInit ()
 
   fun showEvFilter evRead  = "Read"
     | showEvFilter evWrite = "Write"

@@ -10,7 +10,7 @@ signature OS_IO_EV = sig
 
   exception Ev of string
 
-  val evIni:    unit -> ev
+  val evInit:   unit -> ev
   val evModify: ev -> evDesc list -> int
   val evWait:   ev -> Time.time option -> int
 end
@@ -161,11 +161,11 @@ struct
     val eventlist = Array.array (max_events, kevent_struct_empty)
 
   in
-    fun evIni () =
+    fun evInit () =
       let
         val ev = kqueue ()
       in
-        if ev = ~1 then raise Ev "evIni" else
+        if ev = ~1 then raise Ev "evInit" else
         { ev = ev, rH = H.hash hash_size, wH = H.hash hash_size }
       end
 

@@ -32,7 +32,7 @@ end
 val _ = print "-----\n"
 
 local open EvWithTimer in
-  val ev = evIni ()
+  val ev = evInit ()
 
   fun showEvFilter evRead  = "Read"
     | showEvFilter evWrite = "Write"
@@ -63,7 +63,7 @@ end
 val _ = print "=================\n"
 
 local open EvWithTimer in
-  val ev = evIni ()
+  val ev = evInit ()
 
   val t1 = evTimerNew ev
   val _ = evTimerAdd ev (t1, Time.zeroTime, (fn () => print "Timer zeroTime\n"))

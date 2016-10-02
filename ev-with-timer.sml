@@ -14,7 +14,7 @@ struct
 
   type ev = { ev:Ev.ev, now: Time.time ref, timers: (int * Time.time * (unit -> unit)) list ref, last_id: int ref, free_id: int list ref } 
 
-  fun evIni () = { ev = Ev.evIni (), now = ref (Time.now ()), timers = ref [], last_id = ref 0, free_id = ref [] }
+  fun evInit () = { ev = Ev.evInit (), now = ref (Time.now ()), timers = ref [], last_id = ref 0, free_id = ref [] }
 
 
   fun evTimerNew ({ last_id=last_id, free_id=free_id, ... }:ev) =
