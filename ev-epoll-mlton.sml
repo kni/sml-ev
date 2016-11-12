@@ -83,11 +83,10 @@ struct
               Array.update(epoll_event_array, i, (events, fd));
               doit p (i+1) n
             end
-
-        fun unpack_epoll_event_array p n = ()
       in
-        doit epoll_event_pointer 0 cnt;
-        cnt
+        if cnt >= 0
+        then doit epoll_event_pointer 0 cnt
+        else cnt
       end
 
   in
