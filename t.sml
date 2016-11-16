@@ -44,6 +44,7 @@ local open Ev in
 
 
   val wait_cnt = evWait ev (SOME (Time.fromSeconds 3)) (* Time.zeroTime *)
+  val _ = if wait_cnt = ~1 then print "evWait return ~1: errno equal 4 with high probability (Interrupted system call)" else ()
   val _ = print ("evWait:   " ^ (Int.toString wait_cnt) ^ "\n")
 
   val _ = print "...\n"

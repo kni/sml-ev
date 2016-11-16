@@ -1,6 +1,8 @@
-all:
+help:
 	@echo "make poly or make mlton for build, or make clean"
 	@echo "make timer-poly or make timer-mlton"
+
+all: poly timer-poly mlton timer-mlton
 
 poly:
 	polyc -o t-poly t-poly.sml

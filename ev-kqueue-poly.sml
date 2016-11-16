@@ -146,7 +146,7 @@ struct
       in
         if cnt >= 0
         then new_loop cnt
-        else raise Ev "evWait"
+        else cnt
       end
   end
 
