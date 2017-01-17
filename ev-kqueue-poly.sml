@@ -117,7 +117,7 @@ struct
                 val s = Time.toSeconds t
                 val n = Time.toNanoseconds(t) - s * 1000000000
               in
-                SOME (s, n)
+                SOME (Int.fromLarge s, Int.fromLarge n)
               end
           | NONE => NONE
 

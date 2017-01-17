@@ -117,8 +117,8 @@ struct
               NONE   => MLton.Pointer.null
             | SOME (s, n) =>
                let
-                 val p = setC_Long (timeout_pointer, (Int.fromLarge s))
-                 val _ = setC_Long (p, (Int.fromLarge n))
+                 val p = setC_Long (timeout_pointer, s)
+                 val _ = setC_Long (p, n)
                in timeout_pointer end
 
         val cnt = kevent(kq, MLton.Pointer.null, 0, kevent_list_pointer, max_events, (pack_timeout t))
@@ -215,7 +215,7 @@ struct
                 val s = Time.toSeconds t
                 val n = Time.toNanoseconds(t) - s * 1000000000
               in
-                SOME (s, n)
+                SOME (Int.fromLarge s, Int.fromLarge n)
               end
           | NONE => NONE
 
