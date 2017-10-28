@@ -41,7 +41,7 @@ struct
       val { load=load, store=store, ctype={ align=align, ffiType=ffiType, ...} } = breakConversion cInt32
       val ctype = { size= #size LowLevel.cTypeInt64, align=align, ffiType=ffiType }
     in
-      val cInt32forUnion64: LargeInt.int conversion = makeConversion{ load=load, store=store, ctype = ctype }
+      val cInt32forUnion64: int conversion = makeConversion{ load=load, store=store, ctype = ctype }
     end
 
     val epoll_event_conversion = cStruct2 (cUint32, cInt32forUnion64)
@@ -112,7 +112,7 @@ struct
     fun evWait (ev:ev) t =
       let
 
-        val timeout = case t of SOME t => Time.toMilliseconds t | NONE => ~1
+        val timeout = case t of SOME t => Int.fromLarge (Time.toMilliseconds t) | NONE => ~1
 
         val cnt = epoll_wait_ffi((#ev ev), epoll_event_array, (Array.length epoll_event_array), timeout)
 
