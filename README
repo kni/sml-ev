@@ -4,7 +4,7 @@ sml-ev - kqueue (*BSD) and epoll (Linux) library for Standard ML (MLton and Poly
  ev-with-timer.sml                  - added evTimer* functions
 
 Execute "make poly" or "make mlton" command to build "t.sml" test.
-Firstly, you need to edit "t-poly.sml" or "t-mlton.mlb" for Linux: replace kqueue on epoll.
+Firstly, you need to edit "t.mlp" (Poly/ML) or "t.mlb" (MLton) for Linux: replace kqueue on epoll.
 
 Before running a test you should launch simple tcp servers on 8081 and 8082 ports, for example:
 echo pong | nc -l 8081 (*BSD) or echo pong | nc -l -p 8081 (Linux)
