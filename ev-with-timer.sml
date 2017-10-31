@@ -5,6 +5,7 @@ signature OS_IO_EV_TIMER = sig
   val evTimerNew: ev -> int
   val evTimerAdd: ev -> int * Time.time * (unit -> unit) -> unit
   val evTimerDelete: ev -> int -> unit
+  val evNowUpdate: ev -> unit
 end
 
 
@@ -15,6 +16,8 @@ struct
   type ev = { ev:Ev.ev, now: Time.time ref, timers: (int * Time.time * (unit -> unit)) list ref, last_id: int ref, free_id: int list ref } 
 
   fun evInit () = { ev = Ev.evInit (), now = ref (Time.now ()), timers = ref [], last_id = ref 0, free_id = ref [] }
+
+  fun evNowUpdate ({now=now, ...}:ev) = now := Time.now ()
 
 
   fun evTimerNew ({ last_id=last_id, free_id=free_id, ... }:ev) =

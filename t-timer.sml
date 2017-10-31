@@ -34,6 +34,10 @@ val _ = print "-----\n"
 local open EvWithTimer in
   val ev = evInit ()
 
+  (* ... val _ = evNowUpdate ev *)
+  (* This function establishes the current time by querying the kernel, it is done automatically within evInit and evWait.
+   * Call this function before any evTimerAdd when evWait is not called for a very long time. *)
+
   fun showEvFilter evRead  = "Read"
     | showEvFilter evWrite = "Write"
 
