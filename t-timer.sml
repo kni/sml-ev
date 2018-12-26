@@ -31,7 +31,7 @@ end
 
 val _ = print "-----\n"
 
-local open EvWithTimer in
+local open Ev in
   val ev = evInit ()
 
   (* ... val _ = evNowUpdate ev *)
@@ -66,7 +66,7 @@ end
 
 val _ = print "=================\n"
 
-local open EvWithTimer in
+local open Ev in
   val ev = evInit ()
 
   val t1 = evTimerNew ev

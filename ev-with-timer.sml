@@ -1,6 +1,6 @@
 (* Copyright (C) 2016 Nick Kostyria. BSD3 license. *)
 
-signature OS_IO_EV_TIMER = sig
+signature OS_IO_EV = sig
   include OS_IO_EV
   val evTimerNew: ev -> int
   val evTimerAdd: ev -> int * Time.time * (unit -> unit) -> unit
@@ -9,7 +9,7 @@ signature OS_IO_EV_TIMER = sig
 end
 
 
-structure EvWithTimer :> OS_IO_EV_TIMER  =
+structure Ev :> OS_IO_EV  =
 struct
   open Ev
 
