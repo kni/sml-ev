@@ -1,0 +1,108 @@
+diff --git b/ev-kqueue-mlton.sml a/ev-kqueue-mlton.sml
+index 5e60e06..93251ed 100644
+--- b/ev-kqueue-mlton.sml
++++ a/ev-kqueue-mlton.sml
+@@ -40,7 +40,7 @@ struct
+ 
+     val malloc = (_import "malloc" : Word.word -> t;) o Word.fromInt
+ 
+-    val kevent_size = if is_64bit then 64 else 56
++    val kevent_size = if is_64bit then 32 else 20
+     val kevent_list_pointer = malloc (kevent_size * max_events)
+     val timeout_pointer = malloc (if is_64bit then 16 else 8)
+ 
+@@ -65,7 +65,6 @@ struct
+     fun setC_Pointer(p, v) = ( setPointer(p, 0, v); add (p, sizeofPointer) )
+ 
+     fun setC_Int16(p,  v:int) = ( setInt16(p, 0, Int16.fromInt(v));  add (p, 0wx2) )
+-    fun setC_Int64(p,  v:int) = ( setInt64(p, 0, Int64.fromInt(v));  add (p, 0wx8) )
+     fun setC_Word16(p, v:int) = ( setWord16(p, 0, Word16.fromInt v); add (p, 0wx2) )
+     fun setC_Word32(p, v:int) = ( setWord32(p, 0, Word32.fromInt v); add (p, 0wx4) )
+ 
+@@ -83,7 +82,6 @@ struct
+       in (p,v) end
+ 
+     fun getC_Int16(p):(t*int)  = let val v = Int16.toInt(getInt16(p, 0))   val p = add (p, 0wx2) in (p,v) end
+-    fun getC_Int64(p):(t*int)  = let val v = Int64.toInt(getInt64(p, 0))   val p = add (p, 0wx8) in (p,v) end
+     fun getC_Word16(p):(t*int) = let val v = Word16.toInt(getWord16(p, 0)) val p = add (p, 0wx2) in (p,v) end
+     fun getC_Word32(p):(t*int) = let val v = Word32.toInt(getWord32(p, 0)) val p = add (p, 0wx4) in (p,v) end
+ 
+@@ -100,12 +98,8 @@ struct
+                   val p = setC_Int16(p, filter)
+                   val p = setC_Word16(p, flags)
+                   val p = setC_Word32(p, fflags)
+-                  val p = setC_Int64(p, data)
++                  val p = setC_Long(p, data)
+                   val p = setC_Pointer(p, null)
+-                  val p = setC_Int64(p, 0)
+-                  val p = setC_Int64(p, 0)
+-                  val p = setC_Int64(p, 0)
+-                  val p = setC_Int64(p, 0)
+                 in p end
+             in
+                 Vector.foldl pack_kevent_struct p l
+@@ -138,12 +132,8 @@ struct
+                  val (p, filter) = getC_Int16(p)
+                  val (p, flags)  = getC_Word16(p)
+                  val (p, fflags) = getC_Word32(p)
+-                 val (p, data)   = getC_Int64(p)
++                 val (p, data)   = getC_Long(p)
+                  val (p, _)      = getC_Pointer(p)
+-                 val (p, _)      = getC_Int64(p)
+-                 val (p, _)      = getC_Int64(p)
+-                 val (p, _)      = getC_Int64(p)
+-                 val (p, _)      = getC_Int64(p)
+                in ((ident, filter, flags, fflags, data, {}), p) end
+ 
+             fun doit p i n =
+@@ -219,8 +209,8 @@ struct
+ 
+     fun evWait (ev:ev) t =
+       let
+-        val timeout = case t of
+-            SOME t =>
++        val timeout = case t of 
++            SOME t => 
+               let
+                 val s = Time.toSeconds t
+                 val n = Time.toNanoseconds(t) - s * 1000000000
+diff --git b/ev-kqueue-poly.sml a/ev-kqueue-poly.sml
+index ac84973..fa8121d 100644
+--- b/ev-kqueue-poly.sml
++++ a/ev-kqueue-poly.sml
+@@ -40,7 +40,7 @@ struct
+     val kqueue = buildCall0 ((getSymbol libc "kqueue"), (), cInt)
+ 
+     local
+-        val kevent_struct_conversion = cStruct10 (cUlong, cShort, cUshort, cUint, cInt64, cConstStar cVoid, cUint64,cUint64,cUint64,cUint64)
++        val kevent_struct_conversion = cStruct6 (cUlong, cShort, cUshort, cUint, cLong, cConstStar cVoid)
+         val timespec_conversion = cStruct2 (cLong, cLong)
+         val kevent_ffi =
+           buildCall6 ( (getSymbol libc "kevent"),
+@@ -58,7 +58,7 @@ struct
+     end
+ 
+ 
+-    val kevent_struct_empty = (0,0,0,0,0,{},0,0,0,0)
++    val kevent_struct_empty = (0,0,0,0,0,{})
+ 
+     val changelist_zero = Vector.tabulate (0, (fn i => kevent_struct_empty ))
+     val eventlist       = Array.array (max_events, kevent_struct_empty)
+@@ -82,7 +82,7 @@ struct
+         fun evFilterToH evRead  = #rH ev
+           | evFilterToH evWrite = #wH ev
+ 
+-        fun toChange fd filter action = (fd, (evFilterToInt filter), action, 0, 0, {}, 0,0,0,0)
++        fun toChange fd filter action = (fd, (evFilterToInt filter), action, 0, 0, {})
+ 
+         fun evDescToChange (evAdd    (fd, filter, cb)) = toChange fd filter 1
+           | evDescToChange (evDelete (fd, filter))     = toChange fd filter 2
+@@ -133,7 +133,7 @@ struct
+         fun new_loop 0 = cnt
+           | new_loop i =
+               let
+-                val (fd,f,_,_,_,_,_,_,_,_) = Array.sub(eventlist, (i-1))
++                val (fd,f,_,_,_,_) = Array.sub(eventlist, (i-1))
+                 val filter = intToevFilter f
+               in
+                 case getCb fd filter of

@@ -40,7 +40,7 @@ struct
 
     val malloc = (_import "malloc" : Word.word -> t;) o Word.fromInt
 
-    val kevent_size = if is_64bit then 32 else 20
+    val kevent_size = if is_64bit then 64 else 56
     val kevent_list_pointer = malloc (kevent_size * max_events)
     val timeout_pointer = malloc (if is_64bit then 16 else 8)
 
@@ -65,6 +65,7 @@ struct
     fun setC_Pointer(p, v) = ( setPointer(p, 0, v); add (p, sizeofPointer) )
 
     fun setC_Int16(p,  v:int) = ( setInt16(p, 0, Int16.fromInt(v));  add (p, 0wx2) )
+    fun setC_Int64(p,  v:int) = ( setInt64(p, 0, Int64.fromInt(v));  add (p, 0wx8) )
     fun setC_Word16(p, v:int) = ( setWord16(p, 0, Word16.fromInt v); add (p, 0wx2) )
     fun setC_Word32(p, v:int) = ( setWord32(p, 0, Word32.fromInt v); add (p, 0wx4) )
 
@@ -82,6 +83,7 @@ struct
       in (p,v) end
 
     fun getC_Int16(p):(t*int)  = let val v = Int16.toInt(getInt16(p, 0))   val p = add (p, 0wx2) in (p,v) end
+    fun getC_Int64(p):(t*int)  = let val v = Int64.toInt(getInt64(p, 0))   val p = add (p, 0wx8) in (p,v) end
     fun getC_Word16(p):(t*int) = let val v = Word16.toInt(getWord16(p, 0)) val p = add (p, 0wx2) in (p,v) end
     fun getC_Word32(p):(t*int) = let val v = Word32.toInt(getWord32(p, 0)) val p = add (p, 0wx4) in (p,v) end
 
@@ -98,8 +100,12 @@ struct
                   val p = setC_Int16(p, filter)
                   val p = setC_Word16(p, flags)
                   val p = setC_Word32(p, fflags)
-                  val p = setC_Long(p, data)
+                  val p = setC_Int64(p, data)
                   val p = setC_Pointer(p, null)
+                  val p = setC_Int64(p, 0)
+                  val p = setC_Int64(p, 0)
+                  val p = setC_Int64(p, 0)
+                  val p = setC_Int64(p, 0)
                 in p end
             in
                 Vector.foldl pack_kevent_struct p l
@@ -132,8 +138,12 @@ struct
                  val (p, filter) = getC_Int16(p)
                  val (p, flags)  = getC_Word16(p)
                  val (p, fflags) = getC_Word32(p)
-                 val (p, data)   = getC_Long(p)
+                 val (p, data)   = getC_Int64(p)
                  val (p, _)      = getC_Pointer(p)
+                 val (p, _)      = getC_Int64(p)
+                 val (p, _)      = getC_Int64(p)
+                 val (p, _)      = getC_Int64(p)
+                 val (p, _)      = getC_Int64(p)
                in ((ident, filter, flags, fflags, data, {}), p) end
 
             fun doit p i n =
@@ -209,8 +219,8 @@ struct
 
     fun evWait (ev:ev) t =
       let
-        val timeout = case t of 
-            SOME t => 
+        val timeout = case t of
+            SOME t =>
               let
                 val s = Time.toSeconds t
                 val n = Time.toNanoseconds(t) - s * 1000000000

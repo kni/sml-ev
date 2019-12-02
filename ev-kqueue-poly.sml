@@ -40,7 +40,7 @@ struct
     val kqueue = buildCall0 ((getSymbol libc "kqueue"), (), cInt)
 
     local
-        val kevent_struct_conversion = cStruct6 (cUlong, cShort, cUshort, cUint, cLong, cConstStar cVoid)
+        val kevent_struct_conversion = cStruct10 (cUlong, cShort, cUshort, cUint, cInt64, cConstStar cVoid, cUint64,cUint64,cUint64,cUint64)
         val timespec_conversion = cStruct2 (cLong, cLong)
         val kevent_ffi =
           buildCall6 ( (getSymbol libc "kevent"),
@@ -58,7 +58,7 @@ struct
     end
 
 
-    val kevent_struct_empty = (0,0,0,0,0,{})
+    val kevent_struct_empty = (0,0,0,0,0,{},0,0,0,0)
 
     val changelist_zero = Vector.tabulate (0, (fn i => kevent_struct_empty ))
     val eventlist       = Array.array (max_events, kevent_struct_empty)
@@ -82,7 +82,7 @@ struct
         fun evFilterToH evRead  = #rH ev
           | evFilterToH evWrite = #wH ev
 
-        fun toChange fd filter action = (fd, (evFilterToInt filter), action, 0, 0, {})
+        fun toChange fd filter action = (fd, (evFilterToInt filter), action, 0, 0, {}, 0,0,0,0)
 
         fun evDescToChange (evAdd    (fd, filter, cb)) = toChange fd filter 1
           | evDescToChange (evDelete (fd, filter))     = toChange fd filter 2
@@ -111,8 +111,8 @@ struct
 
     fun evWait (ev:ev) t =
       let
-        val timeout = case t of 
-            SOME t => 
+        val timeout = case t of
+            SOME t =>
               let
                 val s = Time.toSeconds t
                 val n = Time.toNanoseconds(t) - s * 1000000000
@@ -133,7 +133,7 @@ struct
         fun new_loop 0 = cnt
           | new_loop i =
               let
-                val (fd,f,_,_,_,_) = Array.sub(eventlist, (i-1))
+                val (fd,f,_,_,_,_,_,_,_,_) = Array.sub(eventlist, (i-1))
                 val filter = intToevFilter f
               in
                 case getCb fd filter of
