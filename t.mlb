@@ -2,7 +2,7 @@ local
 	$(SML_LIB)/basis/mlton.mlb
 	$(SML_LIB)/basis/basis.mlb
 in
-	hash-array-int.sml
+	hash-array.sml
 	ev-kqueue-mlton.sml
 	t.sml
 	main.sml

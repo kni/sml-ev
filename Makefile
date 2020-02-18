@@ -1,6 +1,5 @@
 help:
-	@echo "make poly or make mlton for build, or make clean"
-	@echo "make timer-poly or make timer-mlton"
+	@echo "target: poly mlton timer-poly timer-mlton clean"
 
 all: poly timer-poly mlton timer-mlton
 
