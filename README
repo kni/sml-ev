@@ -15,4 +15,4 @@ To build timer's test (t-timer.sml) execute "make timer-poly" or "make timer-mlt
 N.B.
 About *BSD.
 It works on FreeBSD 12 as it is.
-Apply oldBSD.diff patch for FreeBSD 11, NetBSD and OpenBSD.
+Use ev-kqueue-mlton-old.sml and ev-kqueue-poly-old.sml for FreeBSD 11, NetBSD and OpenBSD.
