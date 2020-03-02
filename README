@@ -16,3 +16,8 @@ N.B.
 About *BSD.
 It works on FreeBSD 12 as it is.
 Use ev-kqueue-mlton-old.sml and ev-kqueue-poly-old.sml for FreeBSD 11, NetBSD and OpenBSD.
+
+
+N.B.
+About ARM.
+It is tested on FreeBSD 12 (Nanopi NEO board).
