@@ -43,7 +43,7 @@ struct
           Arch.X86   => (56, 8)
         | Arch.AMD64 => (64, 16)
         | Arch.ARM   => (64, 16)
-        | Arch.ARM64 => raise Ev "Unsupported platform"
+        | Arch.ARM64 => (64, 16)
         |  _ => raise Ev "Unsupported platform"
 
 
@@ -99,6 +99,18 @@ struct
                         setInt64   (add (p, 0w48), 0, 0);
                         setInt64   (add (p, 0w56), 0, 0)
                       )
+                   | Arch.ARM64 => (
+                        setWord64  (add (p, 0w0),  0, Word64.fromInt ident);
+                        setInt16   (add (p, 0w8),  0, Int16.fromInt  filter);
+                        setWord16  (add (p, 0w10),  0, Word16.fromInt flags);
+                        setWord32  (add (p, 0w12),  0, Word32.fromInt fflags);
+                        setInt64   (add (p, 0w16), 0, Int64.fromInt  data);
+                        setPointer (add (p, 0w24), 0, null);
+                        setInt64   (add (p, 0w32), 0, 0);
+                        setInt64   (add (p, 0w40), 0, 0);
+                        setInt64   (add (p, 0w48), 0, 0);
+                        setInt64   (add (p, 0w56), 0, 0)
+                      )
                   | _ => raise Ev "Unsupported platform"
                 ;
                 add (p, Word.fromInt kevent_size)
@@ -130,6 +142,10 @@ struct
                    | Arch.ARM => (
                        setInt64 (add (timeout_pointer, 0w0), 0, Int64.fromInt s);
                        setInt32 (add (timeout_pointer, 0w8), 0, Int32.fromInt n)
+                      )
+                   | Arch.ARM64 => (
+                       setInt64 (add (timeout_pointer, 0w0), 0, Int64.fromInt s);
+                       setInt64 (add (timeout_pointer, 0w8), 0, Int64.fromInt n)
                       )
                    | _ => raise Ev "Unsupported platform"
                  ;
@@ -171,6 +187,15 @@ struct
                            val data   = Int64.toInt  (getInt64  (add (p, 0w16), 0))
                          in (ident, filter, flags, fflags, data) end
                       )
+                     | Arch.ARM64 => (
+                         let
+                           val ident  = Word64.toInt (getWord64 (add (p, 0w0), 0))
+                           val filter = Int16.toInt  (getInt16  (add (p, 0w8), 0))
+                           val flags  = Int16.toInt  (getInt16  (add (p, 0w10), 0))
+                           val fflags = Word32.toInt (getWord32 (add (p, 0w12), 0))
+                           val data   = Int64.toInt  (getInt64  (add (p, 0w16), 0))
+                         in (ident, filter, flags, fflags, data) end
+                        )
                      | _ => raise Ev "Unsupported platform"
                in
                  ((ident, filter, flags, fflags, data, {}), add (p, Word.fromInt kevent_size))
