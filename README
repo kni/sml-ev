@@ -19,4 +19,5 @@ Use ev-kqueue-mlton-old.sml and ev-kqueue-poly-old.sml for FreeBSD 11, NetBSD an
 
 
 About ARM and ARM64 of MLton version.
-It is tested on ARM FreeBSD 12 (Nanopi NEO board) and ARM64 FreeBSD 12 (qemu).
+It tested on ARM FreeBSD 12 (Nanopi NEO board) and ARM64 FreeBSD 12 (qemu).
+Linux MLton version do not tested but should work on ARM and ARM64.

@@ -32,56 +32,56 @@ struct
 
   local
     open MLton.Pointer
+    open MLton.Platform
 
     val max_events = 64
     val hash_size  = 1000
 
-    val malloc = (_import "malloc" : Word.word -> t;) o Word.fromInt
 
-    val epoll_event_size = 12 (* 12 for 32 and 64 bit Linux *)
+    val (epoll_event_size, epoll_data_fd_offsetof) =
+      if Arch.host = Arch.X86 orelse Arch.host = Arch.AMD64 then (12, 0w4) else
+      if Arch.host = Arch.ARM orelse Arch.host = Arch.ARM64 then (16, 0w8) else
+      raise Ev "Unsupported platform"
+
+
+    val malloc = (_import "malloc" : Word.word -> t;) o Word.fromInt
     val epoll_event_pointer = malloc (epoll_event_size * max_events)
+
 
     val epoll_create   = _import "epoll_create" : int -> int;
     val epoll_ctl_ffi  = _import "epoll_ctl"    : int * int * int * t -> int;
     val epoll_wait_ffi = _import "epoll_wait"   : int * t * int * int -> int;
 
 
-    fun setC_Int32(p,  v:int) = ( setInt32(p, 0, Int32.fromInt v) ;  add (p, 0wx4) )
-    fun setC_Word32(p, v:int) = ( setWord32(p, 0, Word32.fromInt v); add (p, 0wx4) )
-
-    fun getC_Int32(p):(t*int)  = let val v = Int32.toInt(getInt32(p, 0))   val p = add (p, 0wx4) in (p,v) end
-    fun getC_Word32(p):(t*int) = let val v = Word32.toInt(getWord32(p, 0)) val p = add (p, 0wx4) in (p,v) end
-
     val EPOLL_CTL_ADD = 1 and EPOLL_CTL_DEL = 2 and EPOLL_CTL_MOD = 3
 
-    fun epoll_ctl ev ctl fd event =
-      let
-        val p = epoll_event_pointer
-        val p = setC_Word32(p, event)
-        val p = setC_Int32(p, fd) val p = add (p, 0wx4) (* for union *)
-      in
-        if epoll_ctl_ffi(ev, ctl, fd, epoll_event_pointer) = 0
-        then 1
-        else if ctl = EPOLL_CTL_DEL then 0 else raise Ev "evModify"
-      end
+
+    fun epoll_ctl ev ctl fd event = (
+      setInt32  (epoll_event_pointer, 0, Int32.fromInt event);
+      setWord32 (add (epoll_event_pointer, epoll_data_fd_offsetof), 0, Word32.fromInt fd);
+      if epoll_ctl_ffi (ev, ctl, fd, epoll_event_pointer) = 0
+      then 1
+      else if ctl = EPOLL_CTL_DEL then 0 else raise Ev "evModify"
+    )
 
 
-    val epoll_event_array = Array.array (max_events, (0,0))
+    val epoll_event_array = Array.array (max_events, (0, 0))
+
 
     fun epoll_wait ev epoll_event_array t =
       let
-        val cnt = epoll_wait_ffi(ev, epoll_event_pointer, max_events, t)
+        val cnt = epoll_wait_ffi (ev, epoll_event_pointer, max_events, t)
 
         fun doit p i n =
           if i = n
           then n
           else
             let
-              val (p, events) = getC_Word32(p)
-              val (p, fd)     = getC_Int32(p) val p = add (p, 0wx4) (* for union *)
+              val events = Word32.toInt (getWord32 (p, 0))
+              val fd     = Int32.toInt  (getInt32 (add (p, epoll_data_fd_offsetof), 0))
             in
-              Array.update(epoll_event_array, i, (events, fd));
-              doit p (i+1) n
+              Array.update (epoll_event_array, i, (events, fd));
+              doit (add (p,  Word.fromInt epoll_event_size)) (i+1) n
             end
       in
         if cnt >= 0
@@ -106,7 +106,7 @@ struct
         fun isNotSome v = if isSome v then false else true
 
         infix xorb
-        fun op xorb(a:int,b:int):int = Word.toInt(Word.xorb(Word.fromInt a, Word.fromInt b))
+        fun op xorb (a:int, b:int) : int = Word.toInt (Word.xorb (Word.fromInt a, Word.fromInt b))
 
         val EPOLLIN = 1 and EPOLLOUT = 4
 
@@ -119,7 +119,7 @@ struct
           | evModifyOne (evAdd (fd, evWrite, cb)) = if isSome (H.sub (wH, fd)) then 0 else ( (
               if isSome (H.sub (rH, fd))
               then epoll_ctl ev EPOLL_CTL_MOD fd (EPOLLIN xorb EPOLLOUT)
-              else epoll_ctl ev EPOLL_CTL_ADD fd EPOLLOUT 
+              else epoll_ctl ev EPOLL_CTL_ADD fd EPOLLOUT
               ); H.update (wH, fd, cb); 1 )
 
           | evModifyOne (evDelete (fd, evRead))   = if isNotSome (H.sub (rH, fd)) then 0 else ( (
@@ -135,14 +135,14 @@ struct
               ); H.delete (wH, fd); 1 )
 
       in
-        foldl ( fn(ev_desc,cnt) => cnt + evModifyOne ev_desc ) 0 ev_desc_list
+        foldl ( fn (ev_desc, cnt) => cnt + evModifyOne ev_desc ) 0 ev_desc_list
       end
 
 
     fun evWait (ev:ev) t =
       let
 
-        val timeout = case t of SOME t => LargeInt.toInt(Time.toMilliseconds t) | NONE => ~1
+        val timeout = case t of SOME t => LargeInt.toInt (Time.toMilliseconds t) | NONE => ~1
 
         val cnt = epoll_wait (#ev ev) epoll_event_array timeout
 
@@ -171,7 +171,7 @@ struct
         fun new_loop 0 = (!cnt_all)
           | new_loop i =
               let
-                val (events,fd) = Array.sub(epoll_event_array, (i-1))
+                val (events, fd) = Array.sub (epoll_event_array, (i-1))
               in
                 if isRead  events then (doCb fd evRead ; cnt_all_up () ) else ();
                 if isWrite events then (doCb fd evWrite; cnt_all_up () ) else ();
@@ -180,7 +180,7 @@ struct
 
       in
         if cnt >= 0
-        then new_loop cnt 
+        then new_loop cnt
         else cnt
       end
   end
