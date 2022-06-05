@@ -1,0 +1,4 @@
+description: kqueue (*BSD) and epoll (Linux) library for Standard ML (MLton and Poly/ML)
+maintainer: Nick Kostyria <https://github.com/kni>
+keywords: SML,I/O,async
+license: BSD3
