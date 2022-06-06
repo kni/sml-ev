@@ -1,4 +1,4 @@
 use "hash-array.sml";
-use "ev-kqueue-poly.sml";
+use "ev-kqueue-polyml.sml";
 use "ev-with-timer.sml";
 use "t-timer.sml";

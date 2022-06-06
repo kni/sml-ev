@@ -1,0 +1,3 @@
+lib ["hash-array.sml",
+     "ev-kqueue-${SML_COMPILER}.sml",
+     "ev-with-timer.sml"] ;
