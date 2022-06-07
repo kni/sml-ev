@@ -1,0 +1,2 @@
+lib ["hash-array.sml",
+     "ev-kqueue-${SML_COMPILER}.sml"] ;
