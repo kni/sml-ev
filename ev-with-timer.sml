@@ -13,7 +13,7 @@ structure Ev :> OS_IO_EV  =
 struct
   open Ev
 
-  type ev = { ev:Ev.ev, now: Time.time ref, timers: (int * Time.time * (unit -> unit)) list ref, last_id: int ref, free_id: int list ref } 
+  type ev = { ev:Ev.ev, now: Time.time ref, timers: (int * Time.time * (unit -> unit)) list ref, last_id: int ref, free_id: int list ref }
 
   fun evInit () = { ev = Ev.evInit (), now = ref (Time.now ()), timers = ref [], last_id = ref 0, free_id = ref [] }
 
@@ -23,11 +23,11 @@ struct
   fun evTimerNew ({ last_id=last_id, free_id=free_id, ... }:ev) =
     if List.null(!free_id)
     then
-      let 
-        val id = 1 + (!last_id) 
+      let
+        val id = 1 + (!last_id)
       in
         last_id := id;
-        id 
+        id
       end
     else
       let
@@ -62,17 +62,17 @@ struct
   fun doTimer ({ev=ev, now=now, timers=timers, free_id=free_id, ...}:ev) =
     let
       val time = !now
-      fun doit [] ys = ys
-        | doit ((x as (id, t, cb))::xs) ys = 
-           if Time.>(t, time)
-           then doit xs (x::ys) 
-           else (free_id := id::(!free_id); cb (); doit xs ys)
 
-      val curent = !timers
-      val _ = timers := []
-      val old = doit (curent) []
+      fun doit [] ys cbs = (ys, cbs)
+        | doit ((x as (id, t, cb))::xs) ys cbs=
+           if Time.>(t, time)
+           then doit xs (x::ys) cbs
+           else (free_id := id::(!free_id); doit xs ys (cb::cbs))
+
+      val (old, cbs) = doit (!timers) [] []
     in
-      timers := (!timers) @ old
+      timers := old;
+      app (fn cb => cb ()) cbs
     end
 
 
