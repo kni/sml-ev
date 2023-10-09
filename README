@@ -1,6 +1,7 @@
-sml-ev - kqueue (*BSD) and epoll (Linux) library for Standard ML (MLton and Poly/ML).
+sml-ev - kqueue (*BSD), epoll (Linux), poll library for Standard ML (MLton and Poly/ML).
 
  ev-{kqueue,epoll}-{poly,mlton}.sml - base library
+ ev-poll.sml                        - OS.IO.poll from The Standard ML Basis Library
  ev-with-timer.sml                  - added evTimer* functions
 
 Execute "make poly" or "make mlton" command to build "t.sml" test.
