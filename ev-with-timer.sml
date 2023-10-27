@@ -1,4 +1,4 @@
-(* Copyright (C) 2016 Nick Kostyria. BSD3 license. *)
+(* Copyright (C) 2016-2023 Nick Kostyria. BSD3 license. *)
 
 signature OS_IO_EV = sig
   include OS_IO_EV
@@ -9,13 +9,17 @@ signature OS_IO_EV = sig
 end
 
 
-structure Ev :> OS_IO_EV  =
+structure Ev :> OS_IO_EV =
 struct
   open Ev
 
-  type ev = { ev:Ev.ev, now: Time.time ref, timers: (int * Time.time * (unit -> unit)) list ref, last_id: int ref, free_id: int list ref }
+  structure H = HashArrayInt
 
-  fun evInit () = { ev = Ev.evInit (), now = ref (Time.now ()), timers = ref [], last_id = ref 0, free_id = ref [] }
+  type ev = { ev:Ev.ev, now: Time.time ref, timers: (Time.time * (unit -> unit)) H.hash, last_id: int ref, free_id: int list ref }
+
+  val hash_size  = 100
+
+  fun evInit () = { ev = Ev.evInit (), now = ref (Time.now ()), timers = H.hash hash_size, last_id = ref 0, free_id = ref [] }
 
   fun evNowUpdate ({now=now, ...}:ev) = now := Time.now ()
 
@@ -38,54 +42,44 @@ struct
       end
 
 
-  fun evTimerAdd ({ev=ev, now=now, timers=timers, ...}:ev) (id, t, cb) =
+  fun evTimerAdd ({now=now, timers=timers, ...}:ev) (id, t, cb) =
     let
       val time = Time.+((!(now)), t)
-
-      fun doit []      y = (id, time, cb)::y
-        | doit (x::xs) y = if id = (#1 x) then doit xs y else doit xs (x::y)
     in
-      timers := doit (!timers) []
+      H.update (timers, id, (time, cb))
     end
 
 
   fun evTimerDelete ({ timers=timers, free_id=free_id, ... }:ev) id =
     let
-      fun doit []      y = y
-        | doit (x::xs) y = if id = (#1 x) then doit xs y else doit xs (x::y)
     in
-      timers  := doit (!timers) [];
+      H.delete (timers, id);
       free_id := id::(!free_id)
     end
 
 
-  fun doTimer ({ev=ev, now=now, timers=timers, free_id=free_id, ...}:ev) =
+  fun doTimer ({now=now, timers=timers, free_id=free_id, ...}:ev) =
     let
-      val time = !now
+      val time_now = !now
 
-      fun doit [] ys cbs = (ys, cbs)
-        | doit ((x as (id, t, cb))::xs) ys cbs=
-           if Time.>(t, time)
-           then doit xs (x::ys) cbs
-           else (free_id := id::(!free_id); doit xs ys (cb::cbs))
-
-      val (old, cbs) = doit (!timers) [] []
+      val cbs = H.fold (fn (id, (time, cb), r) =>
+        if Time.>(time, time_now)
+        then r
+        else (H.delete (timers, id); cb::r)
+      ) [] timers
     in
-      timers := old;
       app (fn cb => cb ()) cbs
     end
 
 
-  fun newTimeout ev timeout =
+  fun newTimeout ({now=now, timers=timers, ...}:ev) timeout =
     let
-      fun second(_,s,_) = s
-      val time = !(#now ev)
-      val l = !(#timers ev)
-      val m = case timeout of NONE => second(List.hd(l)) | SOME timeout => Time.+(time,timeout)
-      val m = List.foldl (fn((_,t,_),time) => if Time.<(t, time) then t else time) m l
-      val d = Time.-(m, time)
+      val t = case timeout of SOME t => t | NONE => Time.fromSeconds 25
+      val min = H.fold (fn (id, (time, cb), min) =>
+        if Time.<(time, min) then time else min
+      ) (Time.+(!now, t)) timers
     in
-      SOME d
+      SOME (Time.-(min, !now))
     end
 
 
@@ -95,7 +89,7 @@ struct
   fun evWait (ev:ev) timeout =
     let
       val _ = doTimer ev
-      val timeout = if List.null(!(#timers ev)) then timeout else newTimeout ev timeout
+      val timeout = newTimeout ev timeout
       val cnt = Ev.evWait (#ev ev) timeout
       val _ = (#now ev) := Time.now ()
     in
