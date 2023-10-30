@@ -60,10 +60,8 @@ struct
 
   fun doTimer ({now=now, timers=timers, free_id=free_id, ...}:ev) =
     let
-      val time_now = !now
-
       val cbs = H.fold (fn (id, (time, cb), r) =>
-        if Time.>(time, time_now)
+        if Time.>(time, !now)
         then r
         else (H.delete (timers, id); cb::r)
       ) [] timers
@@ -78,8 +76,10 @@ struct
       val min = H.fold (fn (id, (time, cb), min) =>
         if Time.<(time, min) then time else min
       ) (Time.+(!now, t)) timers
+      val d = Time.-(min, !now)
+      val d_min = Time.fromMilliseconds 1
     in
-      SOME (Time.-(min, !now))
+      SOME (if Time.<(d, d_min) then d_min else d)
     end
 
 
