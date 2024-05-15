@@ -38,8 +38,8 @@ struct
     val libc = loadExecutable ()
 
     local
-      val { load=load, store=store, ctype={ align=align, ffiType=ffiType, ...} } = breakConversion cInt32
-      val ctype = { size= #size LowLevel.cTypeInt64, align=align, ffiType=ffiType }
+      val { load=load, store=store, ctype={ align=align, typeForm=ffiType, ...} } = breakConversion cInt32
+      val ctype = { size= #size LowLevel.cTypeInt64, align=align, typeForm=ffiType }
     in
       val cInt32forUnion64: int conversion = makeConversion{ load=load, store=store, ctype = ctype }
     end
