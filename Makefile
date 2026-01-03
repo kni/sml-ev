@@ -22,4 +22,4 @@ poll-mlton:
 	mlton -output t-poll-mlton t-poll.mlb
 
 clean:
-	rm -rf t-poly t-mlton t-timer-poly t-timer-mlton poll-poly poll-mlton
+	rm -rf t-poly t-mlton t-timer-poly t-timer-mlton t-poll-poly t-poll-mlton

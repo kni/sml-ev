@@ -102,8 +102,8 @@ struct
                    | Arch.ARM64 => (
                         setWord64  (add (p, 0w0),  0, Word64.fromInt ident);
                         setInt16   (add (p, 0w8),  0, Int16.fromInt  filter);
-                        setWord16  (add (p, 0w10),  0, Word16.fromInt flags);
-                        setWord32  (add (p, 0w12),  0, Word32.fromInt fflags);
+                        setWord16  (add (p, 0w10), 0, Word16.fromInt flags);
+                        setWord32  (add (p, 0w12), 0, Word32.fromInt fflags);
                         setInt64   (add (p, 0w16), 0, Int64.fromInt  data);
                         setPointer (add (p, 0w24), 0, null);
                         setInt64   (add (p, 0w32), 0, 0);
